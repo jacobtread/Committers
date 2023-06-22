@@ -339,6 +339,11 @@ fn search_users(
                 });
 
             debug!("Progress: {}/{}", users.len(), USERS);
+
+            if users.len() >= USERS {
+                users.truncate(USERS);
+                break 'outer;
+            }
         }
     }
 
