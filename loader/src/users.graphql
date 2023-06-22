@@ -1,0 +1,31 @@
+query UsersQuery($query: String!, $first: Int!, $after: String) {
+  search(type: USER, query: $query, first: $first, after: $after) {
+    edges {
+      node {
+        ... on User {
+          login
+          avatarUrl
+          name
+          company
+          organizations(first: 100) {
+            nodes {
+              login
+            }
+          }
+          followers {
+            totalCount
+          }
+          contributionsCollection {
+            contributionCalendar {
+              totalContributions
+            }
+            totalCommitContributions
+            totalPullRequestContributions
+            restrictedContributionsCount
+          }
+        }
+      }
+      cursor
+    }
+  }
+}

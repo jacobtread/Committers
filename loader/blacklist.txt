@@ -1,0 +1,7 @@
+# This file contains usernames that are blacklisted. Accounts are
+# blacklisted when their contributions are not actually made by users
+# (i.e. Daily automated bots making commits)
+# one username per line
+
+arlidge
+gagichce
