@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs::{create_dir_all, read_to_string, File},
     io::Write,
     path::Path,
@@ -198,6 +199,8 @@ fn search_users(
     /// Maximum number of times a request can retry before failing
     const MAX_ATTEMPTS: usize = 10;
 
+    let mut known_logins = HashSet::new();
+
     let mut users: Vec<User> = Vec::new();
     let mut last_cursor: Option<String> = None;
 
@@ -316,25 +319,27 @@ fn search_users(
                         Vec::with_capacity(0)
                     };
 
-                    let user = User {
-                        login: user.login,
-                        avatar: user.avatar_url,
-                        name: user.name,
-                        company: user.company,
-                        orgs,
-                        followers: user.followers.total_count,
-                        contribs: contrib_count,
-                        pub_contribs: pub_contrib_count,
-                        priv_contribs: priv_contrib_count,
-                        commits: user.contributions_collection.total_commit_contributions,
-                        pull_requests: user
-                            .contributions_collection
-                            .total_pull_request_contributions,
-                    };
+                    min_followers = user.followers.total_count;
 
-                    min_followers = user.followers;
-
-                    users.push(user);
+                    if !known_logins.contains(&user.login) {
+                        let user = User {
+                            login: user.login,
+                            avatar: user.avatar_url,
+                            name: user.name,
+                            company: user.company,
+                            orgs,
+                            followers: user.followers.total_count,
+                            contribs: contrib_count,
+                            pub_contribs: pub_contrib_count,
+                            priv_contribs: priv_contrib_count,
+                            commits: user.contributions_collection.total_commit_contributions,
+                            pull_requests: user
+                                .contributions_collection
+                                .total_pull_request_contributions,
+                        };
+                        known_logins.insert(user.login.clone());
+                        users.push(user);
+                    }
                     last_cursor = Some(cursor);
                 });
 
