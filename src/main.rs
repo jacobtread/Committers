@@ -72,7 +72,7 @@ type URI = String;
 
 #[derive(GraphQLQuery)]
 #[graphql(
-    schema_path = "src/schema.docs.graphql",
+    schema_path = "src/schema.graphql",
     query_path = "src/users.graphql",
     response_derives = "Debug"
 )]
