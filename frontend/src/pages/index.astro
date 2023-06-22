@@ -2,6 +2,10 @@
 import Layout from "../layouts/Layout.astro";
 import ListItem from "../components/ListItem.astro";
 import data from "../../data/output.json";
+
+const badgeURL = new URL("badges/USERNAME.svg", Astro.site);
+const usernameURL = new URL(Astro.site);
+usernameURL.hash = "USERNAME";
 ---
 
 <Layout title="Welcome to Astro.">
@@ -37,7 +41,7 @@ import data from "../../data/output.json";
       </p>
 
       <pre
-        class="display__code"><code>[![committers.top badge]({Astro.url}badges/USERNAME.svg)]({Astro.url}#USERNAME)</code></pre>
+        class="display__code"><code>[![committers.top badge]({badgeURL})]({usernameURL})</code></pre>
     </div>
 
     <ul role="list" class="list">
