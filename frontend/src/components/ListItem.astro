@@ -13,7 +13,12 @@ const { index, login, name, commits, avatar } = Astro.props;
 <li class="item" id={login}>
   {index < 3 && <p class="item__rank">{index + 1}</p>}
 
-  <a href={`https://github.com/${login}`} class="item__flex" target="_blank">
+  <a
+    href={`https://github.com/${login}`}
+    class="item__flex"
+    target="_blank"
+    rel="noreferrer noopener"
+  >
     <img src={avatar} alt={name} class="avatar" loading="lazy" />
     <div class="content">
       <h2>
@@ -28,77 +33,78 @@ const { index, login, name, commits, avatar } = Astro.props;
       </p>
     </div>
   </a>
-  <style>
-    .avatar {
-      max-width: 5rem;
-      border-radius: 100%;
-    }
-
-    .commits {
-      justify-self: flex-end;
-      color: #fff;
-      font-weight: bold;
-      font-size: 1.25rem;
-      color: #62da94;
-    }
-
-    .content {
-      flex: auto;
-    }
-
-    .item__rank {
-      position: absolute;
-      left: 0;
-      top: 0;
-      transform: translate(-50%, -50%);
-      padding: 0.5rem;
-      background-color: #4f7e63;
-      border-radius: 100%;
-      width: 2rem;
-      height: 2rem;
-      text-align: center;
-      line-height: 1rem;
-      color: white;
-      font-weight: bold;
-    }
-
-    .item__flex {
-      display: flex;
-      flex-flow: row;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .item {
-      position: relative;
-      list-style: none;
-      padding: 0.25rem;
-      background-color: #222;
-      background-image: none;
-      background-size: 400%;
-      border-radius: 0.6rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-        0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    }
-
-    .item > a {
-      width: 100%;
-      text-decoration: none;
-      line-height: 1.4;
-      padding: 1rem 1.3rem;
-      border-radius: 0.35rem;
-      color: #fff;
-      opacity: 0.8;
-    }
-    h2 {
-      margin: 0;
-      font-size: 1.25rem;
-      transition: color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    p {
-      margin-top: 0.5rem;
-      margin-bottom: 0;
-      color: #ccc;
-    }
-  </style>
 </li>
+
+<style>
+  .avatar {
+    max-width: 5rem;
+    border-radius: 100%;
+  }
+
+  .commits {
+    justify-self: flex-end;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.25rem;
+    color: #62da94;
+  }
+
+  .content {
+    flex: auto;
+  }
+
+  .item__rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    padding: 0.5rem;
+    background-color: #4f7e63;
+    border-radius: 100%;
+    width: 2rem;
+    height: 2rem;
+    text-align: center;
+    line-height: 1rem;
+    color: white;
+    font-weight: bold;
+  }
+
+  .item__flex {
+    display: flex;
+    flex-flow: row;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .item {
+    position: relative;
+    list-style: none;
+    padding: 0.25rem;
+    background-color: #222;
+    background-image: none;
+    background-size: 400%;
+    border-radius: 0.6rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  .item > a {
+    width: 100%;
+    text-decoration: none;
+    line-height: 1.4;
+    padding: 1rem 1.3rem;
+    border-radius: 0.35rem;
+    color: #fff;
+    opacity: 0.8;
+  }
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    transition: color 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  p {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    color: #ccc;
+  }
+</style>
