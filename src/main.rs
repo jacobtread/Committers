@@ -46,7 +46,7 @@ fn main() {
         Ok(value) => value,
         Err(error) => {
             error!("Failed to create request client: {}", error);
-            exit(1);
+            return;
         }
     };
 
@@ -56,7 +56,7 @@ fn main() {
             Ok(value) => value,
             Err(err) => {
                 error!("Failed to complete preset {}: {}", preset.title, err);
-                exit(1);
+                return;
             }
         };
         if let Err(err) = produce_output(users, preset.title, min_followers) {
@@ -64,7 +64,7 @@ fn main() {
                 "Failed to produce preset output for {}: {}",
                 preset.title, err
             );
-            exit(1);
+            return;
         }
         debug!("Finished preset: {}", preset.title);
     }
