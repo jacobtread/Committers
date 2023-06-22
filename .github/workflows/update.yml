@@ -1,0 +1,36 @@
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * 6,0,1"
+env:
+  CARGO_TERM_COLOR: always
+name: weekly update
+jobs:
+  weekly_update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: perform update and push commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build the loader
+          cargo build --release 
+
+          # Copy binary and make executable
+          cp target/release/committers-loader loader
+          chmod +x loader
+
+          # Execute loader
+          ./loader
+
+          # Setup Github
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Push changes
+          git add data/ranked.json
+          git commit -m "Weekly ranking update"
+          git push origin
