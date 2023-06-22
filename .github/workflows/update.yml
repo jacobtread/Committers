@@ -12,6 +12,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Setup git
+        run: |
+          # Setup Github
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Switch to data branch
+          git checkout -b data origin/data
+
       - name: Build and run loader tool
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -29,13 +38,6 @@ jobs:
           ./loader
       - name: Push changes to data branch
         run: |
-          # Setup Github
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Switch to data branch
-          git checkout -b data origin/data
-
           # Push changes
           git add data/*.json
           git commit -am "Automated update"
