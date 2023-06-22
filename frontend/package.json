@@ -10,6 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^2.6.6"
+    "astro": "^2.6.6",
+    "badge-maker": "^3.3.1"
   }
 }

@@ -1,81 +1,111 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
+import Layout from "../layouts/Layout.astro";
+import ListItem from "../components/ListItem.astro";
+import data from "../../../data/output.json";
 ---
 
 <Layout title="Welcome to Astro.">
-	<main>
-		<h1>Welcome to <span class="text-gradient">Astro</span></h1>
-		<p class="instructions">
-			To get started, open the directory <code>src/pages</code> in your project.<br />
-			<strong>Code Challenge:</strong> Tweak the "Welcome to Astro" message above.
-		</p>
-		<ul role="list" class="link-card-grid">
-			<Card
-				href="https://docs.astro.build/"
-				title="Documentation"
-				body="Learn how Astro works and explore the official API docs."
-			/>
-			<Card
-				href="https://astro.build/integrations/"
-				title="Integrations"
-				body="Supercharge your project with new frameworks and libraries."
-			/>
-			<Card
-				href="https://astro.build/themes/"
-				title="Themes"
-				body="Explore a galaxy of community-built starter themes."
-			/>
-			<Card
-				href="https://astro.build/chat/"
-				title="Community"
-				body="Come say hi to our amazing Discord community. ❤️"
-			/>
-		</ul>
-	</main>
+  <main>
+    <h1><span class="text-gradient">NZ</span> Top Committers</h1>
+    <p>
+      This website includes a list of the users in NZ that have the most GitHub
+      commits
+    </p>
+
+    <p>
+      To be included in this list you must have at least {data.min_followers}
+      followers
+    </p>
+
+    <p class="excludes">
+      This list excludes accounts that use bots or other unfair means to
+      artifically increase their commit counts, you can view the excluded list
+      <a
+        href="https://github.com/jacobtread/Committers/blob/master/blacklist.txt"
+        target="_blank">Here</a
+      >
+    </p>
+
+    <p class="updated">
+      Last Updated: {new Date(data.generated_at).toLocaleString()}
+    </p>
+
+    <div class="display">
+      <p class="display__text">
+        You can display a badge on your GitHub profile using the following
+        markdown
+      </p>
+
+      <pre
+        class="display__code"><code>[![committers.top badge]({Astro.url}badges/USERNAME.svg)]({Astro.url}#USERNAME)</code></pre>
+    </div>
+
+    <ul role="list" class="list">
+      {
+        data.users.map((user, index) => (
+          <ListItem
+            {index}
+            login={user.login}
+            name={user.name}
+            commits={user.commits}
+            avatar={user.avatar}
+          />
+        ))
+      }
+    </ul>
+  </main>
 </Layout>
 
 <style>
-	main {
-		margin: auto;
-		padding: 1.5rem;
-		max-width: 60ch;
-	}
-	h1 {
-		font-size: 3rem;
-		font-weight: 800;
-		margin: 0;
-	}
-	.text-gradient {
-		background-image: var(--accent-gradient);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-size: 400%;
-		background-position: 0%;
-	}
-	.instructions {
-		line-height: 1.6;
-		margin: 1rem 0;
-		border: 1px solid rgba(var(--accent), 25%);
-		background-color: white;
-		padding: 1rem;
-		border-radius: 0.4rem;
-	}
-	.instructions code {
-		font-size: 0.875em;
-		font-weight: bold;
-		background: rgba(var(--accent), 12%);
-		color: rgb(var(--accent));
-		border-radius: 4px;
-		padding: 0.3em 0.45em;
-	}
-	.instructions strong {
-		color: rgb(var(--accent));
-	}
-	.link-card-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(24ch, 1fr));
-		gap: 1rem;
-		padding: 0;
-	}
+  .updated {
+    color: #777;
+  }
+
+  .display {
+    margin-bottom: 3rem;
+  }
+
+  .display__code {
+    overflow-x: scroll;
+    padding: 1rem;
+    background-color: #222;
+  }
+
+  .excludes {
+    color: #3faf44;
+  }
+
+  .excludes a {
+    color: #cf8b8b;
+  }
+
+  main {
+    margin: auto;
+    padding: 1.5rem;
+    max-width: 48rem;
+  }
+  h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .text-gradient {
+    background-image: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 400%;
+    background-position: 0%;
+  }
+  p {
+    margin-bottom: 1rem;
+    color: #ccc;
+  }
+  .list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0;
+  }
 </style>
