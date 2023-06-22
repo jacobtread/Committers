@@ -1,5 +1,6 @@
 use std::{
     collections::HashSet,
+    env::args,
     fs::{create_dir_all, read_to_string, File},
     io::Write,
     path::Path,
@@ -32,6 +33,37 @@ fn main() {
     let blacklist = read_blacklist();
 
     let token = std::env::var("GITHUB_TOKEN").unwrap();
+
+    // Handle blacklist purging only
+    if let Some(arg) = args().nth(1) {
+        // Remove items from the current list that are present in the blacklist
+        if arg == "blacklist" {
+            let data = Path::new("data");
+            if !data.exists() {
+                return;
+            }
+
+            let out = data.join("output.json");
+            let json = read_to_string(&out).expect("Failed to read output.json");
+            let mut output: Output =
+                serde_json::from_str(&json).expect("Failed to parse output.json");
+            // Remove all users that are contained in the blacklist
+            output.users.retain(|user| {
+                !blacklist
+                    .iter()
+                    .any(|blacklist| user.login.eq(blacklist.as_ref()))
+            });
+
+            // Sort the users again to be safe
+            output.users.sort_by(|a, b| b.commits.cmp(&a.commits));
+
+            let json: String = serde_json::to_string(&output).expect("Failed to serialize output");
+            let mut file = File::create(out).expect("Failed to create output file");
+            file.write_all(json.as_bytes())
+                .expect("Failed to write output file");
+            return;
+        }
+    }
 
     let mut headers = HeaderMap::with_capacity(1);
     headers.insert(
