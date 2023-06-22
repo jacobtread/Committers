@@ -26,6 +26,9 @@ jobs:
 
           # Execute loader
           ./loader
+
+          # Copy output for frontend
+          cp data/output.json frontend/data/output.json
       - name: Push changes to data branch
         run: |
           # Setup Github
@@ -34,5 +37,6 @@ jobs:
 
           # Push changes
           git add data/output.json
+          git add frontend/data/output.json
           git commit -am "Automated update"
           git push origin data

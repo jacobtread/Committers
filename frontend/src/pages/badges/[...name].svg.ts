@@ -1,10 +1,10 @@
 import { APIContext, APIRoute, EndpointOutput } from "astro";
-import data from "../../../../data/output.json";
+import data from "../../../data/output.json";
 import { makeBadge } from "badge-maker";
 
 export const getStaticPaths = async () => {
   return data.users.map((user, index) => ({
-    params: { name: user.login + ".svg" },
+    params: { name: user.login },
     props: { user, index },
   }));
 };
