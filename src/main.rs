@@ -3,7 +3,6 @@ use std::{
     fs::{create_dir_all, read_to_string, File},
     io::Write,
     path::Path,
-    process::exit,
     thread::sleep,
     time::Duration,
 };
