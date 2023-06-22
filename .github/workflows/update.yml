@@ -39,4 +39,4 @@ jobs:
           git add data/output.json
           git add frontend/data/output.json
           git commit -am "Automated update"
-          git push origin data
+          git push origin master
