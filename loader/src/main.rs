@@ -2,7 +2,6 @@ use std::{
     fs::{create_dir_all, read_to_string, File},
     io::Write,
     path::Path,
-    ptr::write_bytes,
     thread::sleep,
     time::Duration,
 };
@@ -18,6 +17,8 @@ use thiserror::Error;
 
 mod preset;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() {
     let _ = dotenvy::dotenv();
 
@@ -30,6 +31,11 @@ fn main() {
     produce_output(users);
 }
 
+/// Writes the data/ranked.json file with the sorted results
+/// from the users search
+///
+/// # Arguments
+/// * users - The collection of users
 fn produce_output(mut users: Vec<User>) {
     let data = Path::new("data");
     if !data.exists() {
@@ -70,12 +76,11 @@ type URI = String;
     query_path = "src/users.graphql",
     response_derives = "Debug"
 )]
-pub struct UsersQuery;
+struct UsersQuery;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
+/// Errors that could occur while searching for users
 #[derive(Debug, Error)]
-pub enum SearchError {
+enum SearchError {
     #[error("Failed to create client: {0}")]
     CreateClient(reqwest::Error),
     #[error("Invalid token header: {0}")]
@@ -89,7 +94,7 @@ pub enum SearchError {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct User {
+struct User {
     login: String,
     avatar: String,
     name: Option<String>,
@@ -103,6 +108,11 @@ pub struct User {
     pull_requests: i64,
 }
 
+/// Searches for and collects users from GitHub
+///
+/// # Arguments
+/// * token - The GitHub personal access token
+/// * blacklist - List of blacklisted names
 fn search_users(token: String, blacklist: &[Box<str>]) -> Result<Vec<User>, SearchError> {
     let locations = &preset::PRESET;
 
