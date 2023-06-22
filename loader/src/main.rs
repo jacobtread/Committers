@@ -1,5 +1,5 @@
 use std::{
-    fs::{read_to_string, File},
+    fs::{create_dir_all, read_to_string, File},
     io::Write,
     path::Path,
     ptr::write_bytes,
@@ -22,34 +22,37 @@ mod preset;
 fn main() {
     let _ = dotenvy::dotenv();
 
-    // let users = search_users().await;
+    // let token = std::env::var("GITHUB_TOKEN").unwrap();
+    // let users = search_users(token).unwrap();
 
-    // println!("Hello, world!");
-
-    let token = std::env::var("GITHUB_TOKEN").unwrap();
-
-    let users = search_users_v2(token).unwrap();
-
-    let j: String = serde_json::to_string(&users).unwrap();
-    let mut file = File::create("test.json").unwrap();
-    file.write_all(j.as_bytes()).unwrap();
-
-    // let blacklist = collect_blacklist();
-
-    // let a = read_to_string("test.json").unwrap();
-    // let mut a: Vec<User> = serde_json::from_str(&a).unwrap();
-    // a.sort_by_key(|user| user.commits);
-    // a.reverse();
-    // filter_blacklist(&mut a, &blacklist);
-
-    // a.retain(|value| value.commits > 0);
-    // let j: String = serde_json::to_string(&a).unwrap();
-    // let mut file = File::create("test_pub.json").unwrap();
-    // file.write_all(j.as_bytes()).unwrap();
+    let json = read_to_string("raw.json").unwrap();
+    let users: Vec<User> = serde_json::from_str(&json).unwrap();
+    produce_output(users);
 }
 
-/// Collects the names from the blacklist file
-fn collect_blacklist() -> Vec<Box<str>> {
+fn produce_output(mut users: Vec<User>) {
+    let data = Path::new("data");
+    if !data.exists() {
+        create_dir_all(data).expect("Failed to create data directory");
+    }
+
+    // Remove blacklisted users
+    let blacklist = read_blacklist();
+    filter_blacklist(&mut users, &blacklist);
+
+    // Sort the results by number of commits
+    users.sort_by(|a, b| b.commits.cmp(&a.commits));
+
+    let out = data.join("ranked.json");
+    let json: String = serde_json::to_string(&users).expect("Failed to create users JSON");
+    let mut file = File::create(out).expect("Failed to create data/ranked.json");
+    file.write_all(json.as_bytes())
+        .expect("Failed to write ranked.json");
+}
+
+/// Reads the collection of blacklisted named from the
+/// blacklist.txt file
+fn read_blacklist() -> Vec<Box<str>> {
     let path = Path::new("blacklist.txt");
     if !path.exists() {
         return Vec::with_capacity(0);
@@ -104,7 +107,22 @@ pub enum SearchError {
     MissingData,
 }
 
-fn search_users_v2(token: String) -> Result<Vec<User>, SearchError> {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    login: String,
+    avatar: String,
+    name: Option<String>,
+    company: Option<String>,
+    orgs: Vec<String>,
+    followers: i64,
+    contribs: i64,
+    pub_contribs: i64,
+    priv_contribs: i64,
+    commits: i64,
+    pull_requests: i64,
+}
+
+fn search_users(token: String) -> Result<Vec<User>, SearchError> {
     let locations = &preset::PRESET;
 
     /// GitHub API URL for GraphQL
@@ -251,19 +269,4 @@ fn search_users_v2(token: String) -> Result<Vec<User>, SearchError> {
     }
 
     Ok(users)
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct User {
-    login: String,
-    avatar: String,
-    name: Option<String>,
-    company: Option<String>,
-    orgs: Vec<String>,
-    followers: i64,
-    contribs: i64,
-    pub_contribs: i64,
-    priv_contribs: i64,
-    commits: i64,
-    pull_requests: i64,
 }
