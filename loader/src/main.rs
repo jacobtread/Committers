@@ -14,7 +14,6 @@ use reqwest::{
     header::{HeaderMap, HeaderValue, InvalidHeaderValue, AUTHORIZATION},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use thiserror::Error;
 
 mod preset;
@@ -22,11 +21,12 @@ mod preset;
 fn main() {
     let _ = dotenvy::dotenv();
 
-    // let token = std::env::var("GITHUB_TOKEN").unwrap();
-    // let users = search_users(token).unwrap();
+    // Remove blacklisted users
+    let blacklist = read_blacklist();
 
-    let json = read_to_string("raw.json").unwrap();
-    let users: Vec<User> = serde_json::from_str(&json).unwrap();
+    let token = std::env::var("GITHUB_TOKEN").unwrap();
+    let users = search_users(token, &blacklist).unwrap();
+
     produce_output(users);
 }
 
@@ -35,10 +35,6 @@ fn produce_output(mut users: Vec<User>) {
     if !data.exists() {
         create_dir_all(data).expect("Failed to create data directory");
     }
-
-    // Remove blacklisted users
-    let blacklist = read_blacklist();
-    filter_blacklist(&mut users, &blacklist);
 
     // Sort the results by number of commits
     users.sort_by(|a, b| b.commits.cmp(&a.commits));
@@ -63,21 +59,6 @@ fn read_blacklist() -> Vec<Box<str>> {
         .filter(|line| line.is_empty() || line.starts_with('#'))
         .map(Box::from)
         .collect()
-}
-
-/// Filters to provided list of users so that it doesn't
-/// contain any users from the blacklist
-///
-/// # Arguments
-/// * users - The list of users to filter
-/// * blacklist - The blacklisted users
-fn filter_blacklist(users: &mut Vec<User>, blacklist: &[Box<str>]) {
-    users.retain(|value| {
-        // Ensure the blacklist doesn't contain the name
-        !blacklist
-            .iter()
-            .any(|blacklist| value.login.eq(blacklist.as_ref()))
-    })
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -122,7 +103,7 @@ pub struct User {
     pull_requests: i64,
 }
 
-fn search_users(token: String) -> Result<Vec<User>, SearchError> {
+fn search_users(token: String, blacklist: &[Box<str>]) -> Result<Vec<User>, SearchError> {
     let locations = &preset::PRESET;
 
     /// GitHub API URL for GraphQL
@@ -227,6 +208,12 @@ fn search_users(token: String) -> Result<Vec<User>, SearchError> {
                     Some((user.cursor, value))
                 }
                 _ => None,
+            })
+            // Skip blacklisted users
+            .skip_while(|(_, user)| {
+                blacklist
+                    .iter()
+                    .any(|blacklist| user.login.eq(blacklist.as_ref()))
             })
             .for_each(|(cursor, user)| {
                 let contrib_count = user
