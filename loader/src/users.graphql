@@ -2,6 +2,7 @@ query UsersQuery($query: String!, $first: Int!, $after: String) {
   search(type: USER, query: $query, first: $first, after: $after) {
     edges {
       node {
+        __typename
         ... on User {
           login
           avatarUrl

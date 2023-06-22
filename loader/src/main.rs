@@ -233,7 +233,7 @@ fn search_users_v2(token: String) -> Result<Vec<User>, SearchError> {
                     avatar: user.avatar_url,
                     name: user.name,
                     company: user.company,
-                    orgs, // TODO:
+                    orgs,
                     followers: user.followers.total_count,
                     contribs: contrib_count,
                     pub_contribs: pub_contrib_count,
@@ -247,7 +247,7 @@ fn search_users_v2(token: String) -> Result<Vec<User>, SearchError> {
                 users.push(user);
                 last_cursor = Some(cursor);
             });
-        println!("Completed: {}/{}", users.len(), USERS);
+        println!("Progress: {}/{}", users.len(), USERS);
     }
 
     Ok(users)
