@@ -46,15 +46,17 @@ usernameURL.hash = "USERNAME";
 
     <ul role="list" class="list">
       {
-        data.users.map((user, index) => (
-          <ListItem
-            {index}
-            login={user.login}
-            name={user.name}
-            commits={user.commits}
-            avatar={user.avatar}
-          />
-        ))
+        data.users
+          .slice(0, 100)
+          .map((user, index) => (
+            <ListItem
+              {index}
+              login={user.login}
+              name={user.name}
+              commits={user.commits}
+              avatar={user.avatar}
+            />
+          ))
       }
     </ul>
   </main>

@@ -3,7 +3,7 @@ import data from "../../../data/output.json";
 import { makeBadge } from "badge-maker";
 
 export const getStaticPaths = async () => {
-  return data.users.map((user, index) => ({
+  return data.users.slice(0, 100).map((user, index) => ({
     params: { name: user.login },
     props: { user, index },
   }));
