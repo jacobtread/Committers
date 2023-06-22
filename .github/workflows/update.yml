@@ -2,6 +2,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 * * * 6,0,1"
+  push:
+    paths:
+      - blacklist.txt
 permissions:
   contents: write
 name: weekly update
