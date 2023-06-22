@@ -4,8 +4,6 @@ on:
     - cron: "0 * * * 6,0,1"
 permissions:
   contents: write
-env:
-  CARGO_TERM_COLOR: always
 name: weekly update
 jobs:
   weekly_update:
@@ -17,6 +15,8 @@ jobs:
       - name: Build and run loader tool
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_TERM_COLOR: always
+          RUST_LOG: debug
         run: |
           # Build the loader
           cargo build --release 
@@ -28,14 +28,15 @@ jobs:
           # Execute loader
           ./loader
       - name: Push changes to data branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Setup Github
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Switch to data branch
+          git checkout -b data origin/data
+
           # Push changes
-          git add data/**.json
+          git add data/*.json
           git commit -am "Automated update"
-          git push origin
+          git push origin data

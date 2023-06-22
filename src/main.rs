@@ -50,6 +50,7 @@ fn main() {
     };
 
     for preset in preset::PRESETS {
+        debug!("Starting preset: {}", preset.title);
         let (users, min_followers) = match search_users(&client, &blacklist, preset) {
             Ok(value) => value,
             Err(err) => {
@@ -64,6 +65,7 @@ fn main() {
             );
             exit(1);
         }
+        debug!("Finished preset: {}", preset.title);
     }
 }
 
@@ -83,11 +85,13 @@ pub enum OutputResult {
     WriteFile(#[from] std::io::Error),
 }
 
-/// Writes the data/ranked.json file with the sorted results
-/// from the users search
+/// Writes the output file for the provided users, title
+/// and min followers
 ///
 /// # Arguments
 /// * users - The collection of users
+/// * title - The name of the preset file
+/// * min_followers - The min follower count
 fn produce_output(
     mut users: Vec<User>,
     title: &str,
@@ -128,7 +132,7 @@ fn read_blacklist() -> Vec<Box<str>> {
     let file = read_to_string(path).expect("Failed to read blacklist file");
     file.lines()
         .filter(|line| line.is_empty() || line.starts_with('#'))
-        .map(Box::from)
+        .map(|line| Box::from(line.trim()))
         .collect()
 }
 
@@ -187,8 +191,10 @@ fn search_users(
 
     /// The number of users to collect (Considered amount)
     const USERS: usize = 1000;
-    /// Number of users to query for each time
-    const PER_QUERY: usize = 10;
+
+    const PER_PAGE: usize = 5;
+    const MAX_PER_QUERY: usize = 1000;
+
     /// Maximum number of times a request can retry before failing
     const MAX_ATTEMPTS: usize = 10;
 
@@ -199,7 +205,7 @@ fn search_users(
 
     let mut min_followers = -1;
 
-    while users.len() < USERS {
+    'outer: while users.len() < USERS {
         let mut query = String::new();
 
         for location in location.include {
@@ -219,118 +225,121 @@ fn search_users(
 
         query.push_str(" sort:followers-desc");
 
-        let variables = users_query::Variables {
-            query,
-            first: PER_QUERY as i64,
-            after: last_cursor.take(),
-        };
+        for _ in 1..(MAX_PER_QUERY / PER_PAGE) {
+            let variables = users_query::Variables {
+                query: query.clone(),
+                first: PER_PAGE as i64,
+                after: last_cursor.take(),
+            };
 
-        let res = match post_graphql_blocking::<UsersQuery, _>(client, GRAPHQL_URL, variables) {
-            Ok(value) => value,
-            Err(err) => {
+            let res = match post_graphql_blocking::<UsersQuery, _>(client, GRAPHQL_URL, variables) {
+                Ok(value) => value,
+                Err(err) => {
+                    attempts += 1;
+                    if attempts < MAX_ATTEMPTS {
+                        error!("Failed request (retry in 10s): {}", err);
+
+                        // Sleep for 10 seconds before trying again
+                        sleep(Duration::from_secs(10));
+                        continue;
+                    } else {
+                        return Err(SearchError::FailedRequest(err));
+                    }
+                }
+            };
+
+            if let Some(errors) = res.errors {
                 attempts += 1;
                 if attempts < MAX_ATTEMPTS {
-                    error!("Failed request (retry in 10s): {}", err);
+                    error!("Request errored (retry in 10s): {:?}", errors);
 
                     // Sleep for 10 seconds before trying again
                     sleep(Duration::from_secs(10));
                     continue;
                 } else {
-                    return Err(SearchError::FailedRequest(err));
+                    return Err(SearchError::RequestErrors);
                 }
             }
-        };
 
-        if let Some(errors) = res.errors {
-            attempts += 1;
-            if attempts < MAX_ATTEMPTS {
-                error!("Request errored (retry in 10s): {:?}", errors);
+            let data = match res.data {
+                Some(value) => value,
+                None => {
+                    attempts += 1;
+                    if attempts < MAX_ATTEMPTS {
+                        error!("Request missing data (retry in 10s)");
 
-                // Sleep for 10 seconds before trying again
-                sleep(Duration::from_secs(10));
-                continue;
-            } else {
-                return Err(SearchError::RequestErrors);
-            }
-        }
-
-        let data = match res.data {
-            Some(value) => value,
-            None => {
-                attempts += 1;
-                if attempts < MAX_ATTEMPTS {
-                    error!("Request missing data (retry in 10s)");
-
-                    // Sleep for 10 seconds before trying again
-                    sleep(Duration::from_secs(10));
-                    continue;
-                } else {
-                    return Err(SearchError::MissingData);
+                        // Sleep for 10 seconds before trying again
+                        sleep(Duration::from_secs(10));
+                        continue;
+                    } else {
+                        return Err(SearchError::MissingData);
+                    }
                 }
-            }
-        };
+            };
 
-        let edges = match data.search.edges {
-            Some(ref value) if value.is_empty() => break,
-            Some(value) => value,
-            None => break,
-        };
+            let edges = match data.search.edges {
+                Some(ref value) if value.is_empty() => break 'outer,
+                Some(value) => value,
+                None => break 'outer,
+            };
 
-        edges
-            .into_iter()
-            .flatten()
-            .filter_map(|user| match user.node {
-                Some(users_query::UsersQuerySearchEdgesNode::User(value)) => {
-                    Some((user.cursor, value))
-                }
-                _ => None,
-            })
-            // Skip blacklisted users
-            .skip_while(|(_, user)| {
-                blacklist
-                    .iter()
-                    .any(|blacklist| user.login.eq(blacklist.as_ref()))
-            })
-            .for_each(|(cursor, user)| {
-                let contrib_count = user
-                    .contributions_collection
-                    .contribution_calendar
-                    .total_contributions;
-                let priv_contrib_count =
-                    user.contributions_collection.restricted_contributions_count;
-                let pub_contrib_count = contrib_count - priv_contrib_count;
-
-                let orgs = if let Some(orgs) = user.organizations.nodes {
-                    orgs.into_iter()
-                        .flatten()
-                        .map(|value| value.login)
-                        .collect()
-                } else {
-                    Vec::with_capacity(0)
-                };
-
-                let user = User {
-                    login: user.login,
-                    avatar: user.avatar_url,
-                    name: user.name,
-                    company: user.company,
-                    orgs,
-                    followers: user.followers.total_count,
-                    contribs: contrib_count,
-                    pub_contribs: pub_contrib_count,
-                    priv_contribs: priv_contrib_count,
-                    commits: user.contributions_collection.total_commit_contributions,
-                    pull_requests: user
+            edges
+                .into_iter()
+                .flatten()
+                .filter_map(|user| match user.node {
+                    Some(users_query::UsersQuerySearchEdgesNode::User(value)) => {
+                        Some((user.cursor, value))
+                    }
+                    _ => None,
+                })
+                // Skip blacklisted users
+                .skip_while(|(_, user)| {
+                    blacklist
+                        .iter()
+                        .any(|blacklist| user.login.eq(blacklist.as_ref()))
+                })
+                .for_each(|(cursor, user)| {
+                    let contrib_count = user
                         .contributions_collection
-                        .total_pull_request_contributions,
-                };
-                min_followers = user.followers;
+                        .contribution_calendar
+                        .total_contributions;
+                    let priv_contrib_count =
+                        user.contributions_collection.restricted_contributions_count;
+                    let pub_contrib_count = contrib_count - priv_contrib_count;
 
-                users.push(user);
-                last_cursor = Some(cursor);
-            });
+                    let orgs = if let Some(orgs) = user.organizations.nodes {
+                        orgs.into_iter()
+                            .flatten()
+                            .map(|value| value.login)
+                            .collect()
+                    } else {
+                        Vec::with_capacity(0)
+                    };
 
-        debug!("Progress: {}/{}", users.len(), USERS);
+                    let user = User {
+                        login: user.login,
+                        avatar: user.avatar_url,
+                        name: user.name,
+                        company: user.company,
+                        orgs,
+                        followers: user.followers.total_count,
+                        contribs: contrib_count,
+                        pub_contribs: pub_contrib_count,
+                        priv_contribs: priv_contrib_count,
+                        commits: user.contributions_collection.total_commit_contributions,
+                        pull_requests: user
+                            .contributions_collection
+                            .total_pull_request_contributions,
+                    };
+
+                    min_followers = user.followers;
+
+                    users.push(user);
+                    last_cursor = Some(cursor);
+                });
+
+            debug!("Progress: {}/{}", users.len(), USERS);
+        }
     }
 
     Ok((users, min_followers))

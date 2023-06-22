@@ -1,7 +1,10 @@
-# This file contains usernames that are blacklisted. Accounts are
-# blacklisted when their contributions are not actually made by users
-# (i.e. Daily automated bots making commits)
-# one username per line
+# This file contains usernames that are blacklisted. Accounts are blacklisted when 
+# their contributions are not actually made by users (i.e. Daily automated bots making commits)
+# Comment on the line above should indicate the reason for the blacklist
 
+# Account is mostly used for maintaining URL lists (Thousands of commits just adding URLs)
+ryanbr
+# Account has bot updating a github pages news website 12x daily
 arlidge
+# Account has bot running 12x daily checking github actions uptime adding it to a text file
 gagichce
