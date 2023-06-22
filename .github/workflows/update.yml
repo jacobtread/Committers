@@ -12,27 +12,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Build loader tool
-        env:
-          CARGO_TERM_COLOR: always
-        run: |
-          # Build the loader
-          cargo build --release
-
-      - name: Setup git
-        run: |
-          # Setup Github
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # Switch to data branch
-          git checkout -b data origin/data
-      - name: Execute loader tool
+      - name: Build and run loader tool
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUST_LOG: debug
         run: |
+          # Build the loader
+          cargo build --release
+
           # Copy binary and make executable
           cp target/release/committers-loader loader
           chmod +x loader
@@ -41,7 +28,11 @@ jobs:
           ./loader
       - name: Push changes to data branch
         run: |
+          # Setup Github
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           # Push changes
-          git add data/*.json
+          git add data/output.json
           git commit -am "Automated update"
           git push origin data

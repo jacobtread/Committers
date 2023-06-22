@@ -18,6 +18,8 @@ use reqwest::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::preset::PRESET;
+
 mod preset;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -49,24 +51,24 @@ fn main() {
         }
     };
 
-    for preset in preset::PRESETS {
-        debug!("Starting preset: {}", preset.title);
-        let (users, min_followers) = match search_users(&client, &blacklist, preset) {
-            Ok(value) => value,
-            Err(err) => {
-                error!("Failed to complete preset {}: {}", preset.title, err);
-                return;
-            }
-        };
-        if let Err(err) = produce_output(users, preset.title, min_followers) {
-            error!(
-                "Failed to produce preset output for {}: {}",
-                preset.title, err
-            );
+    let preset = &PRESET;
+
+    debug!("Starting preset: {}", preset.title);
+    let (users, min_followers) = match search_users(&client, &blacklist, preset) {
+        Ok(value) => value,
+        Err(err) => {
+            error!("Failed to complete preset {}: {}", preset.title, err);
             return;
         }
-        debug!("Finished preset: {}", preset.title);
+    };
+    if let Err(err) = produce_output(users, preset.title, min_followers) {
+        error!(
+            "Failed to produce preset output for {}: {}",
+            preset.title, err
+        );
+        return;
     }
+    debug!("Finished preset: {}", preset.title);
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -105,8 +107,7 @@ fn produce_output(
     // Sort the results by number of commits
     users.sort_by(|a, b| b.commits.cmp(&a.commits));
 
-    let file_name = title.to_lowercase().replace(' ', "+");
-    let out = data.join(format!("{}.json", file_name));
+    let out = data.join("output.json");
 
     let output = Output {
         title: title.to_string(),
