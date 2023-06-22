@@ -31,6 +31,8 @@ fn main() {
     // Remove blacklisted users
     let blacklist = read_blacklist();
 
+    dbg!(&blacklist);
+
     let token = std::env::var("GITHUB_TOKEN").unwrap();
 
     let mut headers = HeaderMap::with_capacity(1);
@@ -132,8 +134,9 @@ fn read_blacklist() -> Vec<Box<str>> {
 
     let file = read_to_string(path).expect("Failed to read blacklist file");
     file.lines()
-        .filter(|line| line.is_empty() || line.starts_with('#'))
-        .map(|line| Box::from(line.trim()))
+        .map(|line| line.trim())
+        .skip_while(|line| line.is_empty() || line.starts_with('#'))
+        .map(Box::from)
         .collect()
 }
 
