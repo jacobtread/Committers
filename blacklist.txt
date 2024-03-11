@@ -12,3 +12,5 @@ gagichce
 slekup
 # 12k commits updating a content/scripture some appear to be likely automated?
 semiosis
+# Contributing to the account on the line above this ^
+mullikine
